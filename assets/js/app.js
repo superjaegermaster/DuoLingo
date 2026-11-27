@@ -3,7 +3,7 @@
 
   const STORAGE_KEY = "minilingo-progress-v1";
   const PROFILES = [
-    { id: "eva", name: "Eva", avatar: "E", color: "pink", icon: "heart", role: "Étoiles et paillettes", animations: ["sparkles", "hearts", "rainbow"] },
+    { id: "eva", name: "Eva", avatar: "E", color: "pink", icon: "heart", role: "Étoiles et paillettes", animations: ["stars", "wands", "sparkles", "hearts", "rainbow"] },
     { id: "clement", name: "Clément", avatar: "C", color: "blue", icon: "zap", role: "Muscles et puissance", animations: ["muscles", "dumbbells", "lightning"] }
   ];
   const data = window.MINILINGO_DATA;
