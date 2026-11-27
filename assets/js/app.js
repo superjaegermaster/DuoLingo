@@ -2,6 +2,10 @@
   "use strict";
 
   const STORAGE_KEY = "minilingo-progress-v1";
+  const PROFILES = [
+    { id: "eva", name: "Eva", avatar: "E", color: "pink", icon: "heart", role: "Étoiles et paillettes", animations: ["sparkles", "hearts", "rainbow"] },
+    { id: "clement", name: "Clément", avatar: "C", color: "blue", icon: "star", role: "Comètes et étoiles", animations: ["comets", "stars", "bubbles"] }
+  ];
   const data = window.MINILINGO_DATA;
   const lessons = data.lessons;
   const allWords = lessons.flatMap((lesson) => lesson.words);
@@ -15,7 +19,8 @@
   const confettiLayer = document.getElementById("confetti-layer");
 
   let storageOK = true;
-  let state = loadState();
+  const profileStore = loadProfileStore();
+  let state = profileStore.profiles[profileStore.activeProfileId];
   let view = "learn";
   let session = null;
   let toastTimer = null;
@@ -38,6 +43,15 @@
     })[character]);
   }
 
+  function profileConfig() {
+    return PROFILES.find((profile) => profile.id === profileStore.activeProfileId) || PROFILES[0];
+  }
+
+  function personalize(value) {
+    if (typeof value !== "string") return value;
+    return value.replaceAll("{name}", state.learnerName || profileConfig().name);
+  }
+
   function hydrateStaticIcons() {
     document.querySelectorAll("[data-icon]").forEach((element) => {
       if (!element.querySelector("svg")) {
@@ -46,10 +60,10 @@
     });
   }
 
-  function defaultState() {
+  function defaultState(learnerName = "") {
     return {
       version: 1,
-      learnerName: "",
+      learnerName,
       xp: 0,
       streak: 0,
       lastActiveDate: "",
@@ -139,20 +153,41 @@
     return clean;
   }
 
-  function loadState() {
+  function loadProfileStore() {
+    const clean = {
+      version: 2,
+      activeProfileId: PROFILES[0].id,
+      needsChoice: false,
+      profiles: Object.fromEntries(PROFILES.map((profile) => [profile.id, defaultState(profile.name)]))
+    };
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? normalizeState(JSON.parse(raw)) : defaultState();
+      const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      if (!raw) {
+        clean.needsChoice = true;
+        return clean;
+      }
+      if (raw.profiles && typeof raw.profiles === "object") {
+        PROFILES.forEach((profile) => {
+          const saved = raw.profiles[profile.id];
+          clean.profiles[profile.id] = normalizeState(saved ? { ...saved, learnerName: saved.learnerName || profile.name } : { learnerName: profile.name });
+        });
+        clean.activeProfileId = PROFILES.some((profile) => profile.id === raw.activeProfileId) ? raw.activeProfileId : PROFILES[0].id;
+        clean.needsChoice = Boolean(raw.needsChoice);
+        return clean;
+      }
+      clean.profiles.eva = normalizeState({ ...raw, learnerName: raw.learnerName || PROFILES[0].name });
+      return clean;
     } catch (error) {
       storageOK = false;
-      return defaultState();
+      clean.needsChoice = true;
+      return clean;
     }
   }
 
   function saveState() {
     state.updatedAt = new Date().toISOString();
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(profileStore));
       if (!storageOK) {
         storageOK = true;
         showToast("La sauvegarde est de nouveau disponible.");
@@ -267,10 +302,14 @@
   }
 
   function updateChrome() {
+    const profile = profileConfig();
     document.getElementById("top-streak").textContent = state.streak;
     document.getElementById("top-xp").textContent = state.xp;
-    document.getElementById("top-name").textContent = state.learnerName || "Championne";
-    document.getElementById("top-avatar").textContent = (state.learnerName || "C").charAt(0).toUpperCase();
+    document.getElementById("top-name").textContent = state.learnerName || profile.name;
+    document.getElementById("top-profile-role").textContent = profile.role;
+    document.getElementById("top-avatar").textContent = (state.learnerName || profile.avatar).charAt(0).toUpperCase();
+    document.getElementById("top-avatar").className = `avatar profile-${profile.id}`;
+    document.body.dataset.profile = profile.id;
 
     const daily = todayXP();
     const goal = state.settings.dailyGoal;
@@ -358,7 +397,7 @@
     const lesson = nextLesson();
     const started = completedLessonCount() > 0 || Object.keys(state.lessonProgress).length > 0;
     const allFinished = completedLessonCount() === lessons.length;
-    const name = escapeHTML(state.learnerName || "championne");
+    const name = escapeHTML(state.learnerName || profileConfig().name);
     const buttonLabel = allFinished ? "Réviser mes mots" : started ? "Continuer mon parcours" : "Commencer ma première leçon";
     const buttonAction = allFinished ? "start-review" : "start-next";
 
@@ -396,6 +435,15 @@
       const unitLessons = lessons.filter((item) => (item.unit || "essentials") === unit.id);
       const completed = unitLessons.filter((item) => getProgress(item)?.finished).length;
       const percent = Math.round((completed / unitLessons.length) * 100);
+      const stages = data.stages.map((stage) => {
+        const stageLessons = unitLessons.filter((item) => (item.stage || "vocabulary") === stage.id);
+        if (!stageLessons.length) return "";
+        return `
+          <section class="stage-block stage-${stage.id}" aria-labelledby="stage-${unit.id}-${stage.id}">
+            <div class="stage-heading"><span class="stage-number">${stage.number}</span><div><h4 id="stage-${unit.id}-${stage.id}">${escapeHTML(stage.title)}</h4><p>${escapeHTML(stage.description)}</p></div><small>${stageLessons.length} leçons</small></div>
+            <div class="lesson-path">${stageLessons.map(lessonRow).join("")}</div>
+          </section>`;
+      }).join("");
       return `
         <section class="unit-block color-${unit.color}" aria-labelledby="unit-${unit.id}">
           <article class="unit-card">
@@ -403,7 +451,7 @@
             <div class="unit-copy"><small>Unité ${unit.number} · ${unitLessons.length} leçons</small><h3 id="unit-${unit.id}">${escapeHTML(unit.title)}</h3><p>${escapeHTML(unit.description)}</p></div>
             <div class="unit-progress"><p>${completed} / ${unitLessons.length} leçons</p><div class="progress-track"><span style="width: ${percent}%"></span></div></div>
           </article>
-          <div class="lesson-path">${unitLessons.map(lessonRow).join("")}</div>
+          <div class="unit-stages">${stages}</div>
         </section>`;
     }).join("");
 
@@ -443,7 +491,7 @@
       </section>
 
       <div class="section-heading">
-        <div><h2>Ton parcours</h2><p>${lessons.length} leçons, ${allWords.length} mots et ${lessons.reduce((total, item) => total + item.exercises.length, 0)} exercices pour progresser à ton rythme.</p></div>
+        <div><h2>Ton parcours</h2><p>${lessons.length} leçons, ${allWords.length} mots et ${lessons.reduce((total, item) => total + item.exercises.length, 0)} exercices. Des mots, puis des phrases, puis des conversations.</p></div>
         <span class="section-kicker">${icon("flag")}${unitPercent} % du parcours</span>
       </div>
 
@@ -453,9 +501,9 @@
         <aside class="side-stack" aria-label="Informations utiles">
           <article class="info-card word-card">
             <div class="info-card-heading"><h3>Mot du jour</h3>${icon("sparkles")}</div>
-            <div class="word-main"><strong>${escapeHTML(word.en)}</strong><button class="sound-button" data-action="speak" data-say="${escapeHTML(word.en)}" aria-label="Écouter ${escapeHTML(word.en)}">${icon("volume")}</button></div>
-            <p class="word-translation">${escapeHTML(word.fr)}</p>
-            <p class="word-example">${escapeHTML(word.example)}</p>
+            <div class="word-main"><strong>${escapeHTML(personalize(word.en))}</strong><button class="sound-button" data-action="speak" data-say="${escapeHTML(personalize(word.en))}" aria-label="Écouter ${escapeHTML(personalize(word.en))}">${icon("volume")}</button></div>
+            <p class="word-translation">${escapeHTML(personalize(word.fr))}</p>
+            <p class="word-example">${escapeHTML(personalize(word.example))}</p>
           </article>
 
           <article class="info-card">
@@ -497,8 +545,8 @@
     const vocabulary = learnedWords.length > 0
       ? `<div class="vocab-grid">${learnedWords.map((word) => `
           <article class="vocab-card">
-            <div class="vocab-card-copy"><strong>${escapeHTML(word.en)}</strong><span>${escapeHTML(word.fr)}</span></div>
-            <button class="sound-button" data-action="speak" data-say="${escapeHTML(word.en)}" aria-label="Écouter ${escapeHTML(word.en)}">${icon("volume")}</button>
+            <div class="vocab-card-copy"><strong>${escapeHTML(personalize(word.en))}</strong><span>${escapeHTML(personalize(word.fr))}</span></div>
+            <button class="sound-button" data-action="speak" data-say="${escapeHTML(personalize(word.en))}" aria-label="Écouter ${escapeHTML(personalize(word.en))}">${icon("volume")}</button>
           </article>`).join("")}</div>`
       : `<div class="empty-state"><div class="empty-state-icon">${icon("book")}</div><h2>Ta boîte à mots attend tes premiers mots</h2><p>Commence la leçon « Bonjour ! ». Les mots que tu découvres apparaîtront ici pour que tu puisses les réécouter et les revoir.</p><button class="button button-primary" data-action="start-next">Commencer ma première leçon${icon("arrow-right")}</button></div>`;
 
@@ -527,6 +575,8 @@
     const metrics = {
       lessons: completedLessonCount(),
       words: state.learnedWords.length,
+      phrases: lessons.filter((lesson) => lesson.stage === "phrases" && getProgress(lesson)?.finished).length,
+      conversations: lessons.filter((lesson) => lesson.stage === "conversation" && getProgress(lesson)?.finished).length,
       perfectLessons: state.perfectLessons,
       streak: state.streak,
       xp: state.xp
@@ -713,8 +763,8 @@
     root.innerHTML = `
       <section class="exercise-shell color-${session.lesson.color}" aria-labelledby="exercise-title">
         <div class="exercise-meta"><span class="skill-pill">${icon("pencil")}${escapeHTML(exercise.skill)}</span><span class="exercise-count">Exercice ${session.index + 1} sur ${session.exercises.length}</span></div>
-        <h1 id="exercise-title" tabindex="-1">${escapeHTML(exercise.prompt)}</h1>
-        <p class="exercise-helper">${escapeHTML(exercise.helper)} Ensuite, la question suivante arrive toute seule.</p>
+        <h1 id="exercise-title" tabindex="-1">${escapeHTML(personalize(exercise.prompt))}</h1>
+        <p class="exercise-helper">${escapeHTML(personalize(exercise.helper))} Ensuite, la question suivante arrive toute seule.</p>
         <div class="exercise-card">${renderExerciseBody(exercise)}</div>
         <div class="feedback-area">${renderFeedback(exercise)}</div>
         <p class="lesson-save-note" id="lesson-save-note"></p>
@@ -725,17 +775,53 @@
   function renderExerciseBody(exercise) {
     if (exercise.type === "choice" || exercise.type === "listen") {
       const locked = session.status === "correct" || session.status === "wrong";
+      const expected = personalize(exercise.answer);
       const options = exercise.options.map((option, index) => {
-        const isCorrect = locked && option === exercise.answer;
-        const isWrong = session.status === "wrong" && session.lastWrong === option;
-        const selected = session.selected === option;
+        const label = personalize(option);
+        const isCorrect = locked && label === expected;
+        const isWrong = session.status === "wrong" && session.lastWrong === label;
+        const selected = session.selected === label;
         const classes = [isCorrect ? "correct" : "", isWrong ? "wrong" : "", selected && !isCorrect && !isWrong ? "selected" : ""].filter(Boolean).join(" ");
-        return `<button class="choice-button ${classes}" data-choice="${escapeHTML(option)}" aria-pressed="${selected}" ${locked ? "disabled" : ""}><span class="choice-key">${index + 1}</span><span>${escapeHTML(option)}</span>${isCorrect || isWrong ? `<span class="choice-state">${icon(isCorrect ? "check" : "x")}</span>` : ""}</button>`;
+        return `<button class="choice-button ${classes}" data-choice="${escapeHTML(label)}" aria-pressed="${selected}" ${locked ? "disabled" : ""}><span class="choice-key">${index + 1}</span><span>${escapeHTML(label)}</span>${isCorrect || isWrong ? `<span class="choice-state">${icon(isCorrect ? "check" : "x")}</span>` : ""}</button>`;
       }).join("");
       const listening = exercise.type === "listen"
-        ? `<div class="listen-stage"><button class="listen-button ${speakingText === exercise.audio ? "speaking" : ""}" data-action="speak" data-say="${escapeHTML(exercise.audio)}" aria-label="Écouter le mot anglais">${icon("volume")}</button><p>Appuie pour écouter</p></div>`
+        ? `<div class="listen-stage"><button class="listen-button ${speakingText === personalize(exercise.audio) ? "speaking" : ""}" data-action="speak" data-say="${escapeHTML(personalize(exercise.audio))}" aria-label="Écouter le mot anglais">${icon("volume")}</button><p>Appuie pour écouter</p></div>`
         : "";
       return `${listening}<div class="choice-grid">${options}</div>`;
+    }
+
+    if (exercise.type === "dialogue") {
+      const locked = session.status === "correct" || session.status === "wrong";
+      const expected = personalize(exercise.answer);
+      const history = (exercise.history || []).map((line) => `
+        <div class="chat-bubble ${line.learner ? "learner" : "partner"}"><small>${escapeHTML(line.learner ? state.learnerName || profileConfig().name : line.speaker)}</small><p>${escapeHTML(personalize(line.en))}</p></div>`).join("");
+      const options = exercise.options.map((option, index) => {
+        const label = personalize(option);
+        const isCorrect = locked && label === expected;
+        const isWrong = session.status === "wrong" && session.lastWrong === label;
+        const selected = session.selected === label;
+        const classes = [isCorrect ? "correct" : "", isWrong ? "wrong" : "", selected && !isCorrect && !isWrong ? "selected" : ""].filter(Boolean).join(" ");
+        return `<button class="choice-button ${classes}" data-choice="${escapeHTML(label)}" aria-pressed="${selected}" ${locked ? "disabled" : ""}><span class="choice-key">${index + 1}</span><span>${escapeHTML(label)}</span>${isCorrect || isWrong ? `<span class="choice-state">${icon(isCorrect ? "check" : "x")}</span>` : ""}</button>`;
+      }).join("");
+      return `
+        <div class="dialogue-card">
+          <div class="chat-context">${icon("message")}${escapeHTML(personalize(exercise.context))}</div>
+          <div class="chat-history">${history}</div>
+          <div class="chat-bubble partner current"><small>${escapeHTML(exercise.speaker)}</small><p>${escapeHTML(personalize(exercise.text))}</p><button class="chat-audio-button ${speakingText === personalize(exercise.text) ? "speaking" : ""}" data-action="speak" data-say="${escapeHTML(personalize(exercise.text))}" aria-label="Écouter le message">${icon("volume")}</button></div>
+          <details class="chat-translation"><summary>Un indice en français</summary><p>${escapeHTML(personalize(exercise.translation))}</p></details>
+          <div class="choice-grid dialogue-options">${options}</div>
+        </div>`;
+    }
+
+    if (exercise.type === "repeat") {
+      const locked = session.status === "correct" || session.status === "wrong";
+      return `
+        <div class="repeat-card">
+          <button class="listen-button ${speakingText === personalize(exercise.audio) ? "speaking" : ""}" data-action="speak" data-say="${escapeHTML(personalize(exercise.audio))}" aria-label="Écouter la phrase anglaise">${icon("volume")}</button>
+          <strong>${escapeHTML(personalize(exercise.text))}</strong>
+          <p>${escapeHTML(personalize(exercise.translation))}</p>
+          <button class="button button-primary" data-action="finish-repeat" ${locked ? "disabled" : ""}>J’ai répété à voix haute${icon("check")}</button>
+        </div>`;
     }
 
     if (exercise.type === "type") {
@@ -752,13 +838,13 @@
 
     if (exercise.type === "build") {
       const locked = session.status === "correct" || session.status === "wrong";
-      const selectedTokens = session.selectedTokenIds.map((id) => exercise.tokens[id]);
+      const selectedTokens = session.selectedTokenIds.map((id) => personalize(exercise.tokens[id]));
       const selectedButtons = selectedTokens.length > 0
         ? selectedTokens.map((token, index) => `<button class="word-token selected ${session.status === "correct" ? "correct" : session.status === "wrong" ? "wrong" : ""}" data-action="remove-word" data-token-index="${session.selectedTokenIds[index]}" ${locked ? "disabled" : ""} aria-label="Retirer ${escapeHTML(token)}">${escapeHTML(token)}</button>`).join("")
         : `<span class="sentence-placeholder">Les mots de ta phrase apparaîtront ici</span>`;
       const bank = exercise.tokens.map((token, index) => {
         const used = session.selectedTokenIds.includes(index);
-        return `<button class="word-token ${used ? "used" : ""}" data-action="select-word" data-token-index="${index}" ${used || locked ? "disabled" : ""}>${escapeHTML(token)}</button>`;
+        return `<button class="word-token ${used ? "used" : ""}" data-action="select-word" data-token-index="${index}" ${used || locked ? "disabled" : ""}>${escapeHTML(personalize(token))}</button>`;
       }).join("");
       return `
         <div class="sentence-dropzone" aria-label="Ta phrase">${selectedButtons}</div>
@@ -770,11 +856,11 @@
       const locked = session.status === "correct" || session.status === "wrong";
       const left = exercise.pairs.map((id) => {
         const matched = session.matched.includes(id);
-        return `<button class="match-button ${matched ? "matched" : ""} ${session.matchSelected === id ? "selected" : ""} ${session.matchWrong?.includes(id) ? "match-wrong" : ""}" data-action="select-match-left" data-word-id="${id}" ${matched || locked ? "disabled" : ""}>${escapeHTML(wordById.get(id).en)}</button>`;
+        return `<button class="match-button ${matched ? "matched" : ""} ${session.matchSelected === id ? "selected" : ""} ${session.matchWrong?.includes(id) ? "match-wrong" : ""}" data-action="select-match-left" data-word-id="${id}" ${matched || locked ? "disabled" : ""}>${escapeHTML(personalize(wordById.get(id).en))}</button>`;
       }).join("");
       const right = session.matchRight.map((id) => {
         const matched = session.matched.includes(id);
-        return `<button class="match-button ${matched ? "matched" : ""} ${session.matchWrong?.includes(id) ? "match-wrong" : ""}" data-action="select-match-right" data-word-id="${id}" ${matched || locked ? "disabled" : ""}>${escapeHTML(wordById.get(id).fr)}</button>`;
+        return `<button class="match-button ${matched ? "matched" : ""} ${session.matchWrong?.includes(id) ? "match-wrong" : ""}" data-action="select-match-right" data-word-id="${id}" ${matched || locked ? "disabled" : ""}>${escapeHTML(personalize(wordById.get(id).fr))}</button>`;
       }).join("");
       return `<div class="match-grid"><div class="match-column" aria-label="Mots anglais">${left}</div><div class="match-column" aria-label="Traductions françaises">${right}</div></div>`;
     }
@@ -782,19 +868,31 @@
     return "";
   }
 
+  function successCelebration(exercise) {
+    const profile = profileConfig();
+    let hash = 0;
+    for (const character of exercise.id) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+    const variant = profile.animations[(hash + session.correctFirstTry) % profile.animations.length];
+    const positions = [
+      [-54, -34], [-30, -58], [4, -66], [42, -52], [62, -22], [54, 22], [-58, 18], [-38, 48]
+    ];
+    const pieces = positions.map(([x, y], index) => `<span class="success-piece" style="--x:${x}px;--y:${y}px;--r:${index * 47}deg;--d:${index * 35}ms"></span>`).join("");
+    return `<div class="success-celebration ${variant}" aria-hidden="true">${pieces}</div>`;
+  }
+
   function renderFeedback(exercise) {
     if (session.status === "answering") return "";
     if (session.status === "wrong") {
-      return `<div class="feedback-panel wrong" role="status"><span class="feedback-icon">${icon("x")}</span><div class="feedback-copy"><strong>Pas tout à fait !</strong><div class="answer-reveal">La bonne réponse : <span>${escapeHTML(correctAnswerText(exercise))}</span></div><span class="auto-next-note">${icon("clock")}Suite dans 2 s</span></div></div>`;
+      return `<div class="feedback-panel wrong" role="status"><span class="feedback-icon">${icon("x")}</span><div class="feedback-copy"><strong>Pas tout à fait !</strong><div class="answer-reveal">La bonne réponse : <span>${escapeHTML(personalize(correctAnswerText(exercise)))}</span></div><span class="auto-next-note">${icon("clock")}Suite dans 2 s</span></div></div>`;
     }
     const encouragement = ["Bravo !", "Excellent !", "Bien joué !"][Math.floor(Math.random() * 3)];
-    return `<div class="feedback-panel correct" role="status"><span class="feedback-icon">${icon("check")}</span><div class="feedback-copy"><strong>${encouragement}${session.lastXp > 0 ? ` +${session.lastXp} XP` : ""}</strong><p>Ta réponse est enregistrée.</p><span class="auto-next-note">${icon("clock")}Suite dans 2 s</span></div></div>`;
+    return `<div class="feedback-panel correct" role="status">${successCelebration(exercise)}<span class="feedback-icon">${icon("check")}</span><div class="feedback-copy"><strong>${encouragement}${session.lastXp > 0 ? ` +${session.lastXp} XP` : ""}</strong><p>Ta réponse est enregistrée.</p><span class="auto-next-note">${icon("clock")}Suite dans 2 s</span></div></div>`;
   }
 
   function correctAnswerText(exercise) {
-    if (Array.isArray(exercise.answer)) return exercise.answer.join(" ");
-    if (exercise.type === "match") return exercise.pairs.map((id) => `${wordById.get(id).en} = ${wordById.get(id).fr}`).join(" · ");
-    return exercise.answer;
+    if (Array.isArray(exercise.answer)) return exercise.answer.map(personalize).join(" ");
+    if (exercise.type === "match") return exercise.pairs.map((id) => `${personalize(wordById.get(id).en)} = ${personalize(wordById.get(id).fr)}`).join(" · ");
+    return personalize(exercise.answer);
   }
 
   function selectChoice(choice) {
@@ -876,8 +974,8 @@
   function checkAnswer() {
     if (!session || session.status !== "answering") return;
     const exercise = session.exercises[session.index];
-    if (exercise.type === "choice" || exercise.type === "listen") {
-      if (session.selected === exercise.answer) {
+    if (exercise.type === "choice" || exercise.type === "listen" || exercise.type === "dialogue") {
+      if (session.selected === personalize(exercise.answer)) {
         session.status = "correct";
         session.lastWrong = null;
         completeCurrentExercise("correct");
@@ -890,8 +988,8 @@
     }
 
     if (exercise.type === "build") {
-      const answer = session.selectedTokenIds.map((index) => exercise.tokens[index]);
-      if (answer.every((token, index) => token === exercise.answer[index])) {
+      const answer = session.selectedTokenIds.map((index) => personalize(exercise.tokens[index]));
+      if (answer.length === exercise.answer.length && answer.every((token, index) => token === personalize(exercise.answer[index]))) {
         session.status = "correct";
         completeCurrentExercise("correct");
       } else {
@@ -913,13 +1011,20 @@
       showToast("Écris ta réponse avant de vérifier.");
       return;
     }
-    const accepted = [exercise.answer, ...(exercise.acceptedAnswers || [])].map(normalizeAnswer);
+    const accepted = [exercise.answer, ...(exercise.acceptedAnswers || [])].map(personalize).map(normalizeAnswer);
     if (accepted.includes(normalizeAnswer(value))) {
       session.status = "correct";
       completeCurrentExercise("correct");
     } else {
       handleWrongAttempt();
     }
+    renderExercise();
+  }
+
+  function finishRepeat() {
+    if (!session || session.status !== "answering" || session.exercises[session.index].type !== "repeat") return;
+    session.status = "correct";
+    completeCurrentExercise("correct");
     renderExercise();
   }
 
@@ -1019,13 +1124,13 @@
     speakingText = text;
     utterance.onend = () => {
       speakingText = null;
-      document.querySelectorAll(".listen-button").forEach((button) => button.classList.remove("speaking"));
+      document.querySelectorAll(".listen-button, .chat-audio-button").forEach((button) => button.classList.remove("speaking"));
     };
     utterance.onerror = () => {
       speakingText = null;
-      document.querySelectorAll(".listen-button").forEach((button) => button.classList.remove("speaking"));
+      document.querySelectorAll(".listen-button, .chat-audio-button").forEach((button) => button.classList.remove("speaking"));
     };
-    document.querySelectorAll(".listen-button").forEach((button) => button.classList.toggle("speaking", button.dataset.say === text));
+    document.querySelectorAll(".listen-button, .chat-audio-button").forEach((button) => button.classList.toggle("speaking", button.dataset.say === text));
     window.speechSynthesis.speak(utterance);
   }
 
@@ -1039,7 +1144,7 @@
     const subtitle = review
       ? "Tu viens de faire travailler ta mémoire. Continue comme ça !"
       : perfect
-        ? "Une leçon entière sans erreur. Tu peux être très fière de toi !"
+        ? "Une leçon entière sans erreur. Bravo, c’est une belle réussite !"
         : "Chaque exercice te fait progresser. Tu peux revoir la leçon quand tu veux.";
 
     showModal(`
@@ -1090,6 +1195,41 @@
     if (session && ["correct", "wrong"].includes(session.status)) scheduleAutoAdvance();
   }
 
+  function openProfilePicker(initial = false) {
+    const cards = PROFILES.map((profile) => {
+      const progress = profileStore.profiles[profile.id];
+      const finished = completedLessonCountFor(progress);
+      const active = profile.id === profileStore.activeProfileId;
+      return `
+        <button class="profile-choice profile-${profile.id} ${active ? "selected" : ""}" data-action="select-profile" data-profile-id="${profile.id}" aria-pressed="${active}">
+          <span class="profile-choice-avatar">${profile.avatar}</span>
+          <span class="profile-choice-copy"><strong>${profile.name}</strong><small>${profile.role}</small><span>${finished} leçon${finished > 1 ? "s" : ""} · ${progress.xp} XP</span></span>
+          ${icon(active ? "check" : "arrow-right")}
+        </button>`;
+    }).join("");
+    showModal(`
+      <p class="modal-eyebrow">${icon("users")}Deux aventures séparées</p>
+      <h2 id="modal-title">${initial ? "Qui apprend aujourd’hui ?" : "Choisis ton profil"}</h2>
+      <p class="modal-intro">Eva et Clément ont chacun leurs leçons, leurs XP et leurs badges. Leur progression reste séparée.</p>
+      <div class="profile-picker">${cards}</div>`);
+  }
+
+  function switchProfile(id) {
+    const profile = PROFILES.find((item) => item.id === id);
+    if (!profile) return;
+    clearAutoAdvance();
+    session = null;
+    view = "learn";
+    profileStore.activeProfileId = id;
+    profileStore.needsChoice = false;
+    state = profileStore.profiles[id];
+    saveState();
+    closeModal();
+    updateChrome();
+    renderView();
+    showToast(`Aventure de ${state.learnerName || profile.name} ouverte.`);
+  }
+
   function openSettings() {
     const goals = [10, 20, 30, 40].map((goal) => `<button type="button" class="goal-option ${state.settings.dailyGoal === goal ? "selected" : ""}" data-action="choose-goal" data-value="${goal}" aria-pressed="${state.settings.dailyGoal === goal}">${goal} XP</button>`).join("");
     showModal(`
@@ -1101,6 +1241,7 @@
           <h3>Le petit profil</h3>
           <label class="field-label" for="learner-name">Prénom de l’enfant</label>
           <input class="settings-input" id="learner-name" name="learnerName" type="text" maxlength="24" value="${escapeHTML(state.learnerName)}" placeholder="Ex. Camille" autocomplete="off">
+          <button type="button" class="text-button profile-switch-link" data-action="switch-profile">${icon("users")}Changer entre Eva et Clément</button>
         </section>
         <section class="settings-section">
           <h3>Objectif quotidien</h3>
@@ -1115,7 +1256,7 @@
           <h3>Sauvegarder la progression</h3>
           <div class="settings-actions"><button type="button" class="button button-secondary button-small" data-action="export-progress">${icon("download")}Exporter</button><button type="button" class="button button-secondary button-small" data-action="import-progress">${icon("upload")}Importer</button></div>
           <input id="import-file" type="file" accept=".json,application/json" hidden>
-          <p class="settings-note">Le fichier exporté contient le prénom, les XP et les leçons terminées. Aucune donnée n’est envoyée à un serveur.</p>
+          <p class="settings-note">Le fichier exporté contient la progression du profil ouvert : prénom, XP et leçons terminées. Aucune donnée n’est envoyée à un serveur.</p>
         </section>
         <section class="settings-section danger-zone"><div><strong>Recommencer à zéro</strong><p>Le prénom et les réglages seront conservés.</p></div><button type="button" class="button button-danger button-small" data-action="reset-progress">${icon("trash")}Effacer</button></section>
         <div class="modal-footer"><button type="button" class="button button-secondary" data-action="close-modal">Annuler</button><button type="submit" class="button button-primary">Enregistrer${icon("check")}</button></div>
@@ -1124,7 +1265,7 @@
 
   function saveSettings(form) {
     const formData = new FormData(form);
-    state.learnerName = String(formData.get("learnerName") || "").trim().slice(0, 24);
+    state.learnerName = String(formData.get("learnerName") || "").trim().slice(0, 24) || profileConfig().name;
     state.settings.dailyGoal = [10, 20, 30, 40].includes(Number(formData.get("dailyGoal"))) ? Number(formData.get("dailyGoal")) : 20;
     state.settings.reduceMotion = formData.get("reduceMotion") === "on";
     saveState();
@@ -1136,7 +1277,8 @@
   function exportProgress() {
     const payload = {
       app: "Minilingo",
-      version: 1,
+      version: 2,
+      profileId: profileStore.activeProfileId,
       exportedAt: new Date().toISOString(),
       progress: state
     };
@@ -1161,13 +1303,17 @@
     try {
       const parsed = JSON.parse(await file.text());
       if (!parsed || parsed.app !== "Minilingo" || !parsed.progress) throw new Error("Format invalide");
-      pendingImport = normalizeState(parsed.progress);
-      const finished = completedLessonCountFor(pendingImport);
+      pendingImport = {
+        profileId: PROFILES.some((profile) => profile.id === parsed.profileId) ? parsed.profileId : profileStore.activeProfileId,
+        state: normalizeState(parsed.progress)
+      };
+      const finished = completedLessonCountFor(pendingImport.state);
+      const profileName = PROFILES.find((profile) => profile.id === pendingImport.profileId)?.name || state.learnerName;
       showModal(`
         <div class="confirm-box">
           <div class="confirm-icon">${icon("upload")}</div>
           <h2 id="modal-title">Importer cette progression ?</h2>
-          <p>Le fichier contient ${pendingImport.xp} XP et ${finished} leçon${finished > 1 ? "s" : ""} terminée${finished > 1 ? "s" : ""}. Elle remplacera la progression actuelle de ce navigateur.</p>
+          <p>Le fichier contient ${pendingImport.state.xp} XP et ${finished} leçon${finished > 1 ? "s" : ""} terminée${finished > 1 ? "s" : ""} pour ${escapeHTML(profileName)}. Elle remplacera ce profil dans ce navigateur.</p>
           <div class="modal-footer"><button class="button button-secondary" data-action="close-modal">Annuler</button><button class="button button-primary" data-action="confirm-import">${icon("upload")}Importer</button></div>
         </div>`);
     } catch (error) {
@@ -1181,7 +1327,9 @@
 
   function confirmImport() {
     if (!pendingImport) return;
-    state = pendingImport;
+    profileStore.activeProfileId = pendingImport.profileId;
+    profileStore.profiles[pendingImport.profileId] = pendingImport.state;
+    state = pendingImport.state;
     pendingImport = null;
     saveState();
     closeModal();
@@ -1203,6 +1351,7 @@
     const learnerName = state.learnerName;
     const settings = { ...state.settings };
     state = { ...defaultState(), learnerName, settings };
+    profileStore.profiles[profileStore.activeProfileId] = state;
     saveState();
     closeModal();
     navigate("learn");
@@ -1229,6 +1378,12 @@
       case "settings":
         openSettings();
         break;
+      case "switch-profile":
+        openProfilePicker();
+        break;
+      case "select-profile":
+        switchProfile(element.dataset.profileId);
+        break;
       case "close-modal":
         closeModal();
         break;
@@ -1253,6 +1408,9 @@
         break;
       case "speak":
         speak(element.dataset.say);
+        break;
+      case "finish-repeat":
+        finishRepeat();
         break;
       case "select-word":
         selectWord(Number(element.dataset.tokenIndex));
@@ -1372,9 +1530,9 @@
       return;
     }
     const exercise = session.exercises[session.index];
-    if (["choice", "listen"].includes(exercise.type) && /^[1-4]$/.test(event.key)) {
+    if (["choice", "listen", "dialogue"].includes(exercise.type) && /^[1-4]$/.test(event.key)) {
       event.preventDefault();
-      selectChoice(exercise.options[Number(event.key) - 1]);
+      selectChoice(personalize(exercise.options[Number(event.key) - 1]));
     }
   });
 
@@ -1391,6 +1549,7 @@
   refreshStreak();
   updateNavigation();
   renderView();
+  if (profileStore.needsChoice) openProfilePicker(true);
   if (!storageOK) {
     setTimeout(() => showToast("La sauvegarde automatique n’est pas disponible. Pense à exporter ta progression."), 500);
   }
