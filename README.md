@@ -18,7 +18,7 @@ Aucune dépendance, aucune installation et aucune clé API ne sont nécessaires.
 
 - 5 leçons courtes : salutations, famille, école, animaux et couleurs.
 - 25 exercices variés : choix multiple, écoute, phrases à reconstruire, appariement et saisie.
-- Des corrections immédiates et une possibilité de voir la réponse sans bloquer la progression.
+- Une correction dès la réponse, affichée pendant 2 secondes, puis passage automatique à la question suivante.
 - Une sauvegarde automatique après chaque exercice dans le stockage local du navigateur.
 - Une reprise de leçon au prochain exercice inachevé.
 - Un mode de révision, une boîte à mots et 6 badges.

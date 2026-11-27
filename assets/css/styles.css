@@ -2236,28 +2236,6 @@ main:focus {
   animation: shake 320ms ease;
 }
 
-.exercise-submit {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 22px;
-}
-
-.reveal-inline {
-  display: block;
-  margin: 14px 0 0 auto;
-  padding: 7px 9px;
-  border-radius: 8px;
-  color: #8a78a2;
-  background: transparent;
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.reveal-inline:hover {
-  color: #6f4e9b;
-  background: var(--purple-soft);
-}
-
 .exercise-shell h1:focus {
   outline: none;
 }
@@ -2289,12 +2267,6 @@ main:focus {
   background: #fff2f0;
 }
 
-.feedback-panel.reveal {
-  border-color: #d5c7ec;
-  color: #7653a7;
-  background: #f6f1fc;
-}
-
 .feedback-icon {
   display: grid;
   width: 39px;
@@ -2306,7 +2278,15 @@ main:focus {
   background: currentColor;
 }
 
-.feedback-icon [data-icon] {
+.feedback-panel.correct .feedback-icon {
+  background: #3e842c;
+}
+
+.feedback-panel.wrong .feedback-icon {
+  background: #be5151;
+}
+
+.feedback-icon .icon {
   width: 21px;
   height: 21px;
   color: white;
@@ -2336,12 +2316,19 @@ main:focus {
   color: #9a7070;
 }
 
-.feedback-panel.reveal .feedback-copy p {
-  color: #87779d;
+.auto-next-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  font-size: 9px;
+  font-weight: 800;
+  opacity: 0.75;
 }
 
-.feedback-panel .button {
-  flex: 0 0 auto;
+.auto-next-note .icon {
+  width: 12px;
+  height: 12px;
 }
 
 .lesson-save-note {
@@ -3558,11 +3545,6 @@ main:focus {
 
   .feedback-copy {
     min-width: calc(100% - 55px);
-  }
-
-  .feedback-panel .button {
-    width: 100%;
-    margin-top: 3px;
   }
 
   .modal-surface {
