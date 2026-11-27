@@ -20,12 +20,13 @@ Puis ouuvre <http://127.0.0.1:5173>.
 
 ## Ce que contient l’application
 
-- 5 leçons courtes : salutations, famille, école, animaux et couleurs.
-- 25 exercices variés : choix multiple, écoute, phrases à reconstruire, appariement et saisie.
+- 50 leçons courtes réparties en 10 unités : essentiels, nombres, maison, nourriture, corps, actions, voyages, nature, loisirs, école et numérique.
+- 200 mots anglais avec traduction, exemple et prononciation.
+- 295 exercices variés : choix multiple, écoute, phrases à reconstruire, appariement et saisie.
 - Une correction dès la réponse, affichée pendant 2 secondes, puis passage automatique à la question suivante.
 - Une sauvegarde automatique après chaque exercice dans le stockage local du navigateur.
 - Une reprise de leçon au prochain exercice inachevé.
-- Un mode de révision, une boîte à mots et 6 badges.
+- Un mode de révision, une boîte à mots et 10 badges.
 - Un espace parents avec prénom, objectif quotidien, réduction des animations, export et import de la progression.
 - Une interface responsive pour ordinateur, tablette et téléphone.
 

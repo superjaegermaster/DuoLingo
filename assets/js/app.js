@@ -362,7 +362,8 @@
     const buttonLabel = allFinished ? "Réviser mes mots" : started ? "Continuer mon parcours" : "Commencer ma première leçon";
     const buttonAction = allFinished ? "start-review" : "start-next";
 
-    const lessonRows = lessons.map((item, index) => {
+    const lessonRow = (item) => {
+      const index = lessons.findIndex((lessonItem) => lessonItem.id === item.id);
       const progress = getProgress(item);
       const unlocked = lessonUnlocked(index);
       const completed = progress?.completed.length || 0;
@@ -389,6 +390,21 @@
             <span class="lesson-action" aria-hidden="true">${icon(actionIcon)}</span>
           </button>
         </div>`;
+    };
+
+    const unitSections = data.units.map((unit) => {
+      const unitLessons = lessons.filter((item) => (item.unit || "essentials") === unit.id);
+      const completed = unitLessons.filter((item) => getProgress(item)?.finished).length;
+      const percent = Math.round((completed / unitLessons.length) * 100);
+      return `
+        <section class="unit-block color-${unit.color}" aria-labelledby="unit-${unit.id}">
+          <article class="unit-card">
+            <div class="unit-illustration" aria-hidden="true">${icon(unit.icon)}</div>
+            <div class="unit-copy"><small>Unité ${unit.number} · ${unitLessons.length} leçons</small><h3 id="unit-${unit.id}">${escapeHTML(unit.title)}</h3><p>${escapeHTML(unit.description)}</p></div>
+            <div class="unit-progress"><p>${completed} / ${unitLessons.length} leçons</p><div class="progress-track"><span style="width: ${percent}%"></span></div></div>
+          </article>
+          <div class="lesson-path">${unitLessons.map(lessonRow).join("")}</div>
+        </section>`;
     }).join("");
 
     const weekDates = getWeekDates();
@@ -427,19 +443,12 @@
       </section>
 
       <div class="section-heading">
-        <div><h2>Ton parcours</h2><p>Une leçon à la fois, sans se presser.</p></div>
-        <span class="section-kicker">${icon("flag")}Unité 1 · Les essentiels</span>
+        <div><h2>Ton parcours</h2><p>${lessons.length} leçons, ${allWords.length} mots et ${lessons.reduce((total, item) => total + item.exercises.length, 0)} exercices pour progresser à ton rythme.</p></div>
+        <span class="section-kicker">${icon("flag")}${unitPercent} % du parcours</span>
       </div>
 
       <div class="course-layout">
-        <section class="course-path" aria-label="Leçons de l’unité 1">
-          <article class="unit-card">
-            <div class="unit-illustration">${icon("book")}</div>
-            <div class="unit-copy"><small>Unité 1 · Niveau débutant</small><h3>Les essentiels</h3><p>5 leçons pour faire tes premiers pas en anglais.</p></div>
-            <div class="unit-progress"><p>${completedLessonCount()} / ${lessons.length} leçons</p><div class="progress-track"><span style="width: ${unitPercent}%"></span></div></div>
-          </article>
-          <div class="lesson-path">${lessonRows}</div>
-        </section>
+        <section class="course-path" aria-label="Parcours complet">${unitSections}</section>
 
         <aside class="side-stack" aria-label="Informations utiles">
           <article class="info-card word-card">
@@ -517,6 +526,7 @@
     document.title = "Mes badges — Minilingo";
     const metrics = {
       lessons: completedLessonCount(),
+      words: state.learnedWords.length,
       perfectLessons: state.perfectLessons,
       streak: state.streak,
       xp: state.xp

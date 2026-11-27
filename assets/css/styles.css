@@ -794,6 +794,12 @@ main:focus {
   gap: 26px;
 }
 
+.unit-block + .unit-block {
+  margin-top: 42px;
+  padding-top: 34px;
+  border-top: 1px solid var(--line);
+}
+
 .unit-card {
   display: flex;
   align-items: center;
@@ -812,8 +818,8 @@ main:focus {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 18px;
-  color: var(--green-dark);
-  background: var(--green-soft);
+  color: var(--accent-dark, var(--green-dark));
+  background: var(--accent-soft, var(--green-soft));
   transform: rotate(-3deg);
 }
 
@@ -828,7 +834,7 @@ main:focus {
 }
 
 .unit-copy small {
-  color: var(--green-dark);
+  color: var(--accent-dark, var(--green-dark));
   font-size: 9px;
   font-weight: 900;
   letter-spacing: 1.2px;
