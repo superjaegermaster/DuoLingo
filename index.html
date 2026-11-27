@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Minilingo, une application ludique pour apprendre l’anglais en français.">
+  <meta name="theme-color" content="#58c83f">
+  <title>Minilingo — L’anglais en s’amusant</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%2358c83f'/%3E%3Cpath d='M15 18c8-2 16-1 17 4 1-5 9-6 17-4v25c-8-2-15-1-17 3-2-4-9-5-17-3V18Z' fill='white'/%3E%3Cpath d='M32 22v24' stroke='%2358c83f' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <script src="assets/js/data.js" defer></script>
+  <script src="assets/js/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Aller au contenu</a>
+
+  <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-book" viewBox="0 0 24 24"><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H11v17H5.5A2.5 2.5 0 0 0 3 22V5.5Zm18 0A2.5 2.5 0 0 0 18.5 3H13v17h5.5A2.5 2.5 0 0 1 21 22V5.5Z"/><path d="M16 7h2M6 7h2"/></symbol>
+    <symbol id="icon-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z"/></symbol>
+    <symbol id="icon-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4m14-1v2a3 3 0 0 1-3 3H3"/></symbol>
+    <symbol id="icon-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="m8.5 13-2 9 5.5-3 5.5 3-2-9"/><path d="m10 8 1.3 1.3L15 6"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+    <symbol id="icon-flame" viewBox="0 0 24 24"><path d="M12.5 2c.7 5-3.8 6.2-3 10.5-1.6-.8-2.2-2.4-2.1-4.2C4.8 10.6 4 13 4 15.5A8 8 0 0 0 20 16c0-4.5-3.2-8.3-7.5-14Z"/><path d="M12 13c1.8 1.8 2.7 3 2.2 4.6a3.1 3.1 0 0 1-6.1-.6c0-1.5.9-2.8 2-4 0 1.4.6 2.1 1.1 2.3C11 13.7 11.7 13 12 13Z"/></symbol>
+    <symbol id="icon-zap" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 10-13h-7V2Z"/></symbol>
+    <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5m6-6-6 6 6 6"/></symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="icon-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8V4Z"/></symbol>
+    <symbol id="icon-volume" viewBox="0 0 24 24"><path d="m11 4-6 5H2v6h3l6 5V4Zm4 4a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+    <symbol id="icon-star" viewBox="0 0 24 24"><path d="m12 2 3 6.5 7 .9-5.1 4.9 1.3 7-6.2-3.4-6.2 3.4 1.3-7L2 9.4l7-.9L12 2Z"/></symbol>
+    <symbol id="icon-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="icon-trophy" viewBox="0 0 24 24"><path d="M8 3h8v6a4 4 0 0 1-8 0V3Zm0 2H4v3a4 4 0 0 0 4 4m8-7h4v3a4 4 0 0 1-4 4m-4 1v5m-4 3h8m-7-3h6"/></symbol>
+    <symbol id="icon-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+    <symbol id="icon-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3Zm7 11 .8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14ZM5 13l.8 2.2L8 16l-2.2.8L5 19l-.8-2.2L2 16l2.2-.8L5 13Z"/></symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16"/></symbol>
+    <symbol id="icon-upload" viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5M4 20h16"/></symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V3h8v3m-10 0 1 15h10l1-15M10 10v7m4-7v7"/></symbol>
+    <symbol id="icon-chevron-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="icon-flag" viewBox="0 0 24 24"><path d="M5 22V3m0 1c5-4 9 4 14 0v11c-5 4-9-4-14 0"/></symbol>
+    <symbol id="icon-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m16 8-2.5 5.5L8 16l2.5-5.5L16 8Z"/></symbol>
+    <symbol id="icon-shield" viewBox="0 0 24 24"><path d="m12 2 8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></symbol>
+    <symbol id="icon-message" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-9 8.5 9.6 9.6 0 0 1-4-.9L3 21l1.7-4.7a8.5 8.5 0 1 1 16.3-4.8Z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/></symbol>
+    <symbol id="icon-pencil" viewBox="0 0 24 24"><path d="m16 3 5 5L8 21H3v-5L16 3Zm-3 3 5 5M3 16l5 5"/></symbol>
+    <symbol id="icon-paw" viewBox="0 0 24 24"><ellipse cx="12" cy="16" rx="6" ry="5"/><ellipse cx="5" cy="9" rx="2" ry="3"/><ellipse cx="10" cy="5" rx="2" ry="3"/><ellipse cx="15" cy="5" rx="2" ry="3"/><ellipse cx="20" cy="9" rx="2" ry="3"/></symbol>
+    <symbol id="icon-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1.5a2.5 2.5 0 0 0 1-4.8 1.7 1.7 0 0 1 .7-3.2H18a3 3 0 0 0 3-3c0-4-4-7-9-7Z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10" cy="6.5" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="17.5" cy="10.5" r="1"/></symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21v-2a7 7 0 0 1 14 0v2m1-17a4 4 0 0 1 0 8m3 3a6 6 0 0 1 2 4v2"/></symbol>
+    <symbol id="icon-heart" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+    <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M20.5 14.5A9 9 0 0 1 9.5 3.5a9 9 0 1 0 11 11Z"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Navigation principale">
+      <button class="brand" data-nav="learn" aria-label="Minilingo, accueil">
+        <span class="brand-mark" data-icon="book"></span>
+        <span class="brand-copy"><strong>minilingo</strong><small>L’anglais en s’amusant</small></span>
+      </button>
+
+      <p class="sidebar-label">MON COURS</p>
+      <nav class="side-nav">
+        <button class="nav-item active" data-nav="learn"><span data-icon="home"></span>Apprendre</button>
+        <button class="nav-item" data-nav="review"><span data-icon="repeat"></span>Réviser</button>
+        <button class="nav-item" data-nav="badges"><span data-icon="award"></span>Mes badges</button>
+      </nav>
+
+      <div class="sidebar-goal">
+        <div class="sidebar-goal-heading"><span data-icon="target"></span><strong>Objectif du jour</strong></div>
+        <div class="goal-track"><span id="sidebar-goal-fill"></span></div>
+        <p><span id="sidebar-goal-text">0 / 20 XP</span><span id="sidebar-goal-percent">0 %</span></p>
+      </div>
+
+      <div class="sidebar-bottom">
+        <div class="encouragement"><span data-icon="sparkles"></span><p>Un petit effort chaque jour, c’est déjà beaucoup !</p></div>
+        <button class="parent-button" data-action="settings"><span data-icon="settings"></span>Espace parents</button>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <button class="mobile-brand" data-nav="learn" aria-label="Minilingo, accueil"><span class="brand-mark" data-icon="book"></span><strong>minilingo</strong></button>
+        <div class="language-pill"><span class="language-flag">FR</span><span>Je découvre l’anglais</span><span class="language-level">Niveau 1</span></div>
+        <div class="topbar-stats">
+          <div class="stat-pill streak-pill" title="Jours d’affilée"><span data-icon="flame"></span><strong id="top-streak">0</strong></div>
+          <div class="stat-pill xp-pill" title="Points d’expérience"><span data-icon="zap"></span><strong id="top-xp">0</strong></div>
+          <button class="profile-button" data-action="settings" aria-label="Ouvrir l’espace parents"><span class="avatar" id="top-avatar">C</span><span class="profile-copy"><strong id="top-name">Championne</strong><small>Petite exploratrice</small></span><span data-icon="settings"></span></button>
+        </div>
+      </header>
+
+      <main id="main-content" tabindex="-1">
+        <div class="loading-state"><span class="loading-orbit"></span><p>On prépare ton aventure…</p></div>
+      </main>
+    </div>
+
+    <nav class="mobile-nav" aria-label="Navigation mobile">
+      <button class="active" data-nav="learn"><span data-icon="home"></span><small>Apprendre</small></button>
+      <button data-nav="review"><span data-icon="repeat"></span><small>Réviser</small></button>
+      <button data-nav="badges"><span data-icon="award"></span><small>Badges</small></button>
+      <button data-action="settings"><span data-icon="settings"></span><small>Parents</small></button>
+    </nav>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"><span class="toast-icon" data-icon="check"></span><span id="toast-text"></span></div>
+  <dialog class="modal" id="modal" aria-labelledby="modal-title"><div class="modal-surface"><button class="modal-close" data-action="close-modal" aria-label="Fermer"><span data-icon="x"></span></button><div id="modal-content"></div></div></dialog>
+  <div class="confetti-layer" id="confetti-layer" aria-hidden="true"></div>
+</body>
+</html>
