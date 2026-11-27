@@ -1,18 +1,22 @@
 # Minilingo
 
+**[JOUER À MINILINGO](https://superjaegermaster.github.io/DuoLingo/)**
+
 Une application HTML ludique, entièrement en français, pour aider une enfant de 9 ans à découvrir l’anglais.
 
-## Découvrir l’application
+## Jouer en ligne
 
-Ouvre `index.html` dans un navigateur récent. Pour un fonctionnement local plus fiable, lance un petit serveur :
+Ouvre le lien ci-dessus dans un navigateur récent, sur ordinateur, tablette ou téléphone. Aucune installation, aucune dépendance et aucune clé API ne sont nécessaires.
+
+### Jouer en local
+
+Pour faire tourner l’application localement :
 
 ```bash
 python3 -m http.server 5173
 ```
 
 Puis ouuvre <http://127.0.0.1:5173>.
-
-Aucune dépendance, aucune installation et aucune clé API ne sont nécessaires.
 
 ## Ce que contient l’application
 
@@ -53,15 +57,11 @@ Effacer les données du site peut supprimer la progression. L’espace parents p
 
 L’application ne contient ni publicité, ni suivi, ni compte utilisateur, ni serveur. La prononciation anglaise utilise la synthèse vocale disponible dans le navigateur.
 
-## Publier avec GitHub Pages
+## Mise à jour du site
 
-1. Pousse les fichiers sur la branche `main`.
-2. Dans le dépôt GitHub, ouvre **Settings → Pages**.
-3. Dans **Build and deployment**, choisis **Deploy from a branch**.
-4. Sélectionne la branche `main` et le dossier `/ (root)`, puis enregistre.
-5. GitHub fournira l’adresse publique après quelques instants.
+Le site est publié par GitHub Pages depuis la branche `main` et le dossier racine. Chaque modification poussée sur `main` est déployée automatiquement.
 
-Pour un dépôt privé, la disponibilité de GitHub Pages dépend de l’offre GitHub du compte.
+Adresse du jeu : <https://superjaegermaster.github.io/DuoLingo/>
 
 ## Modifier les leçons
 
