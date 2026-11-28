@@ -4761,15 +4761,48 @@ function buildPracticeLessons() {
   });
 }
 
+function buildVocabularyReview(lesson) {
+  const words = lesson.words;
+  const offset = lesson.number % 2 === 0 ? 2 : 1;
+  const targetIndex = (lesson.number + offset) % words.length;
+  const target = words[targetIndex];
+  const rotated = words.map((_, index) => words[(targetIndex + index) % words.length]);
+  const answerPosition = lesson.number % words.length;
+  const options = [...rotated.slice(answerPosition), ...rotated.slice(0, answerPosition)];
+  if (lesson.number % 2 === 0) {
+    return {
+      id: `${lesson.id}-word-review`, type: "listen", skill: "Revoir les mots",
+      prompt: "Quel mot viens-tu d’entendre ?", helper: "Écoute encore et choisis le bon mot.",
+      audio: target.en, wordId: target.id, wordIds: [target.id],
+      options: options.map((word) => word.en), answer: target.en
+    };
+  }
+  return {
+    id: `${lesson.id}-word-review`, type: "choice", skill: "Revoir les mots",
+    prompt: `Comment dit-on « ${target.fr} » en anglais ?`, helper: "Choisis le bon mot.",
+    wordId: target.id, wordIds: [target.id],
+    options: options.map((word) => word.en), answer: target.en
+  };
+}
+
 function buildCourseLessons(baseLessons) {
   const stageOrder = Object.fromEntries(COURSE_STAGES.map((stage) => [stage.id, stage.number]));
   return [...baseLessons, ...buildPracticeLessons()]
     .sort((first, second) => {
+      const stageDifference = (stageOrder[first.stage || "vocabulary"] - stageOrder[second.stage || "vocabulary"]);
+      if (stageDifference) return stageDifference;
       const unitDifference = (COURSE_UNITS.find((unit) => unit.id === first.unit)?.number || 1) - (COURSE_UNITS.find((unit) => unit.id === second.unit)?.number || 1);
       if (unitDifference) return unitDifference;
-      return (stageOrder[first.stage || "vocabulary"] - stageOrder[second.stage || "vocabulary"]) || ((first.number || 999) - (second.number || 999));
+      return (first.number || 999) - (second.number || 999);
     })
-    .map((lesson, index) => ({ ...lesson, number: index + 1 }));
+    .map((lesson, index) => {
+      const numbered = { ...lesson, number: index + 1 };
+      if (numbered.stage !== "vocabulary") return numbered;
+      return {
+        ...numbered,
+        exercises: numbered.exercises.map((exercise) => exercise.type === "build" ? buildVocabularyReview(numbered) : exercise)
+      };
+    });
 }
 
 window.MINILINGO_DATA = {
