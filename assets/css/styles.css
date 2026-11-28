@@ -2654,7 +2654,8 @@ main:focus {
   color: #9a7070;
 }
 
-.auto-next-note {
+.auto-next-note,
+.retry-note {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -2664,7 +2665,13 @@ main:focus {
   opacity: 0.75;
 }
 
-.auto-next-note .icon {
+.retry-note {
+  color: #a45d58;
+  opacity: 1;
+}
+
+.auto-next-note .icon,
+.retry-note .icon {
   width: 12px;
   height: 12px;
 }
@@ -2847,20 +2854,6 @@ main:focus {
   width: 14px;
   height: 14px;
   color: var(--green);
-}
-
-.answer-reveal {
-  margin-top: 12px;
-  padding: 13px 15px;
-  border-radius: 12px;
-  color: #5d6b80;
-  background: rgba(255, 255, 255, 0.7);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.answer-reveal span {
-  color: var(--green-dark);
 }
 
 .modal {
@@ -3209,6 +3202,19 @@ main:focus {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 27px;
+}
+
+.completion-actions {
+  flex-wrap: wrap;
+}
+
+.completion-actions .button {
+  flex: 1 1 140px;
+}
+
+.completion-actions .button-ghost {
+  min-height: 38px;
+  flex-basis: 100%;
 }
 
 .completion {

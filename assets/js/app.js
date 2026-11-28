@@ -733,7 +733,7 @@
     main.classList.add("lesson-main");
     document.title = `${session.lesson.title} — Minilingo`;
     updateNavigation();
-    const doneCount = session.index + (session.status === "correct" || session.status === "wrong" ? 1 : 0);
+    const doneCount = session.index + (session.status === "correct" ? 1 : 0);
     const percent = Math.round((doneCount / session.exercises.length) * 100);
     main.innerHTML = `
       <div class="lesson-header">
@@ -764,7 +764,7 @@
       <section class="exercise-shell color-${session.lesson.color}" aria-labelledby="exercise-title">
         <div class="exercise-meta"><span class="skill-pill">${icon("pencil")}${escapeHTML(exercise.skill)}</span><span class="exercise-count">Exercice ${session.index + 1} sur ${session.exercises.length}</span></div>
         <h1 id="exercise-title" tabindex="-1">${escapeHTML(personalize(exercise.prompt))}</h1>
-        <p class="exercise-helper">${escapeHTML(personalize(exercise.helper))} Ensuite, la question suivante arrive toute seule.</p>
+        <p class="exercise-helper">${escapeHTML(personalize(exercise.helper))} En cas d’erreur, réessaie le même exercice.</p>
         <div class="exercise-card">${renderExerciseBody(exercise)}</div>
         <div class="feedback-area">${renderFeedback(exercise)}</div>
         <p class="lesson-save-note" id="lesson-save-note"></p>
@@ -774,7 +774,7 @@
 
   function renderExerciseBody(exercise) {
     if (exercise.type === "choice" || exercise.type === "listen") {
-      const locked = session.status === "correct" || session.status === "wrong";
+      const locked = session.status === "correct";
       const expected = personalize(exercise.answer);
       const options = exercise.options.map((option, index) => {
         const label = personalize(option);
@@ -791,7 +791,7 @@
     }
 
     if (exercise.type === "dialogue") {
-      const locked = session.status === "correct" || session.status === "wrong";
+      const locked = session.status === "correct";
       const expected = personalize(exercise.answer);
       const history = (exercise.history || []).map((line) => `
         <div class="chat-bubble ${line.learner ? "learner" : "partner"}"><small>${escapeHTML(line.learner ? state.learnerName || profileConfig().name : line.speaker)}</small><p>${escapeHTML(personalize(line.en))}</p></div>`).join("");
@@ -814,7 +814,7 @@
     }
 
     if (exercise.type === "repeat") {
-      const locked = session.status === "correct" || session.status === "wrong";
+      const locked = session.status === "correct";
       return `
         <div class="repeat-card">
           <button class="listen-button ${speakingText === personalize(exercise.audio) ? "speaking" : ""}" data-action="speak" data-say="${escapeHTML(personalize(exercise.audio))}" aria-label="Écouter la phrase anglaise">${icon("volume")}</button>
@@ -825,7 +825,7 @@
     }
 
     if (exercise.type === "type") {
-      const locked = session.status === "correct" || session.status === "wrong";
+      const locked = session.status === "correct";
       const stateClass = session.status === "correct" ? "correct" : session.status === "wrong" ? "wrong" : "";
       return `
         <form class="type-form" id="type-form">
@@ -837,7 +837,7 @@
     }
 
     if (exercise.type === "build") {
-      const locked = session.status === "correct" || session.status === "wrong";
+      const locked = session.status === "correct";
       const selectedTokens = session.selectedTokenIds.map((id) => personalize(exercise.tokens[id]));
       const selectedButtons = selectedTokens.length > 0
         ? selectedTokens.map((token, index) => `<button class="word-token selected ${session.status === "correct" ? "correct" : session.status === "wrong" ? "wrong" : ""}" data-action="remove-word" data-token-index="${session.selectedTokenIds[index]}" ${locked ? "disabled" : ""} aria-label="Retirer ${escapeHTML(token)}">${escapeHTML(token)}</button>`).join("")
@@ -853,7 +853,7 @@
     }
 
     if (exercise.type === "match") {
-      const locked = session.status === "correct" || session.status === "wrong";
+      const locked = session.status === "correct";
       const left = exercise.pairs.map((id) => {
         const matched = session.matched.includes(id);
         return `<button class="match-button ${matched ? "matched" : ""} ${session.matchSelected === id ? "selected" : ""} ${session.matchWrong?.includes(id) ? "match-wrong" : ""}" data-action="select-match-left" data-word-id="${id}" ${matched || locked ? "disabled" : ""}>${escapeHTML(personalize(wordById.get(id).en))}</button>`;
@@ -938,23 +938,27 @@
     return `<div class="success-character ${profile.id}-character" aria-hidden="true">${drawing}</div>`;
   }
 
-function renderFeedback(exercise) {
+  function renderFeedback(exercise) {
     if (session.status === "answering") return "";
     if (session.status === "wrong") {
-      return `<div class="feedback-panel wrong" role="status"><span class="feedback-icon">${icon("x")}</span><div class="feedback-copy"><strong>Pas tout à fait !</strong><div class="answer-reveal">La bonne réponse : <span>${escapeHTML(personalize(correctAnswerText(exercise)))}</span></div><span class="auto-next-note">${icon("clock")}Suite dans 2 s</span></div></div>`;
+      return `<div class="feedback-panel wrong" role="status"><span class="feedback-icon">${icon("x")}</span><div class="feedback-copy"><strong>Pas tout à fait !</strong><p>Regarde ou réécoute bien, puis réessaie le même exercice.</p><span class="retry-note">${icon("repeat")}Tu vas y arriver !</span></div></div>`;
     }
     const encouragement = ["Bravo !", "Excellent !", "Bien joué !"][Math.floor(Math.random() * 3)];
     return `<div class="feedback-panel correct" role="status">${successCharacter()}${successCelebration(exercise)}<span class="feedback-icon">${icon("check")}</span><div class="feedback-copy"><strong>${encouragement}${session.lastXp > 0 ? ` +${session.lastXp} XP` : ""}</strong><p>Ta réponse est enregistrée.</p><span class="auto-next-note">${icon("clock")}Suite dans 2 s</span></div></div>`;
   }
 
-  function correctAnswerText(exercise) {
-    if (Array.isArray(exercise.answer)) return exercise.answer.map(personalize).join(" ");
-    if (exercise.type === "match") return exercise.pairs.map((id) => `${personalize(wordById.get(id).en)} = ${personalize(wordById.get(id).fr)}`).join(" · ");
-    return personalize(exercise.answer);
+  function beginRetry() {
+    if (!session || session.status !== "wrong") return;
+    session.status = "answering";
+    session.lastWrong = null;
+    session.matchWrong = null;
+    session.completedCurrent = false;
+    session.lastXp = 0;
   }
 
   function selectChoice(choice) {
-    if (!session || session.status !== "answering") return;
+    if (!session || !["answering", "wrong"].includes(session.status)) return;
+    beginRetry();
     session.selected = choice;
     checkAnswer();
   }
@@ -996,7 +1000,7 @@ function renderFeedback(exercise) {
 
     if (result === "correct") {
       recordWordResult(exercise.wordIds, "correct");
-      session.correctFirstTry += 1;
+      if (session.attempts === 0) session.correctFirstTry += 1;
     }
 
     session.lastXp = xp;
@@ -1026,11 +1030,13 @@ function renderFeedback(exercise) {
     recordWordResult(session.exercises[session.index].wordIds, "wrong");
     markWrongExercise();
     session.status = "wrong";
-    completeCurrentExercise("wrong");
+    saveState();
+    updateChrome();
   }
 
   function checkAnswer() {
-    if (!session || session.status !== "answering") return;
+    if (!session || !["answering", "wrong"].includes(session.status)) return;
+    beginRetry();
     const exercise = session.exercises[session.index];
     if (exercise.type === "choice" || exercise.type === "listen" || exercise.type === "dialogue") {
       if (session.selected === personalize(exercise.answer)) {
@@ -1062,7 +1068,8 @@ function renderFeedback(exercise) {
   }
 
   function checkTypedAnswer() {
-    if (!session || session.status !== "answering") return;
+    if (!session || !["answering", "wrong"].includes(session.status)) return;
+    beginRetry();
     const exercise = session.exercises[session.index];
     const value = session.typeValue.trim();
     if (!value) {
@@ -1087,7 +1094,8 @@ function renderFeedback(exercise) {
   }
 
   function selectWord(index) {
-    if (!session || session.status !== "answering") return;
+    if (!session || !["answering", "wrong"].includes(session.status)) return;
+    beginRetry();
     const exercise = session.exercises[session.index];
     if (!exercise.tokens[index] || session.selectedTokenIds.includes(index)) return;
     session.selectedTokenIds.push(index);
@@ -1096,13 +1104,15 @@ function renderFeedback(exercise) {
   }
 
   function removeWord(index) {
-    if (!session || session.status !== "answering") return;
+    if (!session || !["answering", "wrong"].includes(session.status)) return;
+    beginRetry();
     session.selectedTokenIds = session.selectedTokenIds.filter((tokenIndex) => tokenIndex !== index);
     renderExercise();
   }
 
   function selectMatchLeft(id) {
-    if (!session || session.status !== "answering") return;
+    if (!session || !["answering", "wrong"].includes(session.status)) return;
+    beginRetry();
     session.matchSelected = id;
     session.matchWrong = null;
     renderExercise();
@@ -1139,15 +1149,15 @@ function renderFeedback(exercise) {
 
   function scheduleAutoAdvance() {
     clearAutoAdvance();
-    if (!session || session.completionShown || !["correct", "wrong"].includes(session.status)) return;
+    if (!session || session.completionShown || session.status !== "correct") return;
     session.autoAdvanceTimer = setTimeout(() => {
       session.autoAdvanceTimer = null;
-      if (session && ["correct", "wrong"].includes(session.status)) nextExercise();
+      if (session?.status === "correct") nextExercise();
     }, 2000);
   }
 
   function nextExercise() {
-    if (!session || !["correct", "wrong"].includes(session.status)) return;
+    if (!session || session.status !== "correct") return;
     clearAutoAdvance();
     if (session.index >= session.exercises.length - 1) {
       showCompletion();
@@ -1192,6 +1202,12 @@ function renderFeedback(exercise) {
     window.speechSynthesis.speak(utterance);
   }
 
+  function nextLessonAfterCurrent() {
+    if (!session || session.mode !== "lesson") return null;
+    const index = lessons.findIndex((lesson) => lesson.id === session.lesson.id);
+    return lessons[index + 1] || null;
+  }
+
   function showCompletion() {
     if (!session) return;
     clearAutoAdvance();
@@ -1205,6 +1221,11 @@ function renderFeedback(exercise) {
         ? "Une leçon entière sans erreur. Bravo, c’est une belle réussite !"
         : "Chaque exercice te fait progresser. Tu peux revoir la leçon quand tu veux.";
 
+    const nextLesson = nextLessonAfterCurrent();
+    const actions = nextLesson
+      ? `<button class="button button-primary" data-action="completion-next">Leçon suivante${icon("arrow-right")}</button><button class="button button-secondary" data-action="completion-review">${icon("repeat")}Réviser mes mots</button><button class="button button-ghost" data-action="completion-home">Retour au parcours</button>`
+      : `<button class="button button-secondary" data-action="completion-review">${icon("repeat")}Réviser mes mots</button><button class="button button-primary" data-action="completion-home">Retour au parcours${icon("arrow-right")}</button>`;
+
     showModal(`
       <div class="completion">
         <div class="completion-art">${icon(review ? "repeat" : "trophy")}</div>
@@ -1216,7 +1237,7 @@ function renderFeedback(exercise) {
           <div class="completion-stat"><strong>${session.correctFirstTry}/${session.exercises.length}</strong><span>DU PREMIER COUP</span></div>
           <div class="completion-stat"><strong>${state.streak}</strong><span>JOUR${state.streak > 1 ? "S" : ""} DE SÉRIE</span></div>
         </div>
-        <div class="modal-footer"><button class="button button-secondary" data-action="completion-review">${icon("repeat")}Réviser mes mots</button><button class="button button-primary" data-action="completion-home">Retour au parcours${icon("arrow-right")}</button></div>
+        <div class="modal-footer completion-actions">${actions}</div>
       </div>`);
     launchConfetti();
   }
@@ -1250,7 +1271,7 @@ function renderFeedback(exercise) {
       navigate("learn");
       return;
     }
-    if (session && ["correct", "wrong"].includes(session.status)) scheduleAutoAdvance();
+    if (session?.status === "correct") scheduleAutoAdvance();
   }
 
   function openProfilePicker(initial = false) {
@@ -1477,12 +1498,14 @@ function renderFeedback(exercise) {
         removeWord(Number(element.dataset.tokenIndex));
         break;
       case "undo-word":
-        if (session?.status !== "answering") return;
+        if (!session || !["answering", "wrong"].includes(session.status)) return;
+        beginRetry();
         if (session.selectedTokenIds.length) session.selectedTokenIds.pop();
         renderExercise();
         break;
       case "clear-words":
-        if (session?.status !== "answering") return;
+        if (!session || !["answering", "wrong"].includes(session.status)) return;
+        beginRetry();
         session.selectedTokenIds = [];
         renderExercise();
         break;
@@ -1498,6 +1521,13 @@ function renderFeedback(exercise) {
       case "completion-home":
         navigate("learn");
         break;
+      case "completion-next": {
+        const nextLesson = nextLessonAfterCurrent();
+        closeModal();
+        if (nextLesson) openLesson(nextLesson.id);
+        else navigate("learn");
+        break;
+      }
       case "completion-review":
         navigate("review");
         break;
@@ -1582,7 +1612,7 @@ function renderFeedback(exercise) {
 
   document.addEventListener("keydown", (event) => {
     if (modal.open || !session || event.target.matches("input, textarea, select")) return;
-    if (["correct", "wrong"].includes(session.status) && event.key === "Enter") {
+    if (session.status === "correct" && event.key === "Enter") {
       event.preventDefault();
       nextExercise();
       return;
