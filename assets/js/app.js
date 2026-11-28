@@ -880,13 +880,71 @@
     return `<div class="success-celebration ${variant}" aria-hidden="true">${pieces}</div>`;
   }
 
-  function renderFeedback(exercise) {
+  function successCharacter() {
+    const profile = profileConfig();
+    const drawing = profile.id === "clement"
+      ? `<svg viewBox="0 0 120 120" focusable="false">
+          <ellipse cx="60" cy="110" rx="29" ry="5" fill="#2f6fae" opacity=".16"/>
+          <g class="strong-body">
+            <path d="M49 80 45 103" stroke="#f3b58f" stroke-width="12" stroke-linecap="round"/>
+            <path d="M71 80 75 103" stroke="#f3b58f" stroke-width="12" stroke-linecap="round"/>
+            <path d="M36 104h15v7H36zM69 104h15v7H69z" fill="#214d79"/>
+            <g class="flex-arm flex-arm-left">
+              <path d="m44 54-16-9M28 45 23 29" fill="none" stroke="#f3b58f" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle class="bicep" cx="29" cy="44" r="9" fill="#f3b58f"/>
+              <circle cx="23" cy="26" r="7" fill="#f3b58f"/>
+              <path d="m19 23-5-7m9 5-1-9m4 11 4-7" stroke="#f3b58f" stroke-width="5" stroke-linecap="round"/>
+            </g>
+            <g class="flex-arm flex-arm-right">
+              <path d="m76 54 16-9M92 45l5-16" fill="none" stroke="#f3b58f" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle class="bicep" cx="91" cy="44" r="9" fill="#f3b58f"/>
+              <circle cx="97" cy="26" r="7" fill="#f3b58f"/>
+              <path d="m101 23 5-7m-9 5 1-9m-4 11-4-7" stroke="#f3b58f" stroke-width="5" stroke-linecap="round"/>
+            </g>
+            <path d="M43 51q17-9 34 0l-5 31q-12 7-24 0Z" fill="#4a90e2"/>
+            <path d="M49 52q11 9 22 0" fill="none" stroke="#dceeff" stroke-width="4"/>
+            <path d="m47 79 26 1-2 15H49Z" fill="#24517d"/>
+            <path d="M47 94h10m6 0h10" stroke="#dceeff" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="60" cy="28" r="15" fill="#f3b58f"/>
+            <path d="M45 27q0-17 16-17 15 1 15 15-8-6-13-10-5 7-18 12Z" fill="#44342d"/>
+            <path d="M50 30h5m10 0h5" stroke="#44342d" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="53" cy="32" r="1.8" fill="#263445"/><circle cx="67" cy="32" r="1.8" fill="#263445"/>
+            <path d="M55 38q5 5 10 0" fill="none" stroke="#9c543e" stroke-width="2.5" stroke-linecap="round"/>
+          </g>
+        </svg>`
+      : `<svg viewBox="0 0 120 120" focusable="false">
+          <ellipse cx="60" cy="110" rx="30" ry="5" fill="#b94f7b" opacity=".16"/>
+          <g class="princess-body">
+            <path d="M53 94v11m14-11v11" stroke="#f3c5ad" stroke-width="7" stroke-linecap="round"/>
+            <path d="M48 105h12m0 0h12" stroke="#a94c7d" stroke-width="5" stroke-linecap="round"/>
+            <g class="princess-skirt">
+              <path d="M48 50h24l17 47q-29 12-58 0Z" fill="#e978a5"/>
+              <path d="M45 77q15 9 30 0l10 20q-25 10-50 0Z" fill="#f7b7d1"/>
+              <path d="m49 54-11 42m33-42 11 42" stroke="#fff0f6" stroke-width="3" opacity=".65"/>
+            </g>
+            <path d="M48 44q12-8 24 0l-2 17q-10 7-20 0Z" fill="#f7b7d1"/>
+            <path d="M47 46 35 64m38-18 12 18" fill="none" stroke="#f3c5ad" stroke-width="8" stroke-linecap="round"/>
+            <circle cx="34" cy="66" r="5" fill="#f3c5ad"/><circle cx="86" cy="66" r="5" fill="#f3c5ad"/>
+            <circle cx="60" cy="26" r="16" fill="#f3c5ad"/>
+            <path d="M43 30q-3-20 17-21 21 0 18 22l-6-10q-12 7-29 3Z" fill="#7d4b36"/>
+            <path d="m45 21 5-13 10 9 10-9 5 13Z" fill="#ffd968" stroke="#dca82d" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="60" cy="13" r="3" fill="#e978a5"/>
+            <circle cx="53" cy="28" r="1.8" fill="#47322f"/><circle cx="67" cy="28" r="1.8" fill="#47322f"/>
+            <path d="M55 34q5 5 10 0" fill="none" stroke="#b45f73" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="47" cy="33" r="3" fill="#f3a5b6" opacity=".65"/><circle cx="73" cy="33" r="3" fill="#f3a5b6" opacity=".65"/>
+            <path d="m60 43 3 5-3 5-3-5Z" fill="#fff4ba"/>
+          </g>
+        </svg>`;
+    return `<div class="success-character ${profile.id}-character" aria-hidden="true">${drawing}</div>`;
+  }
+
+function renderFeedback(exercise) {
     if (session.status === "answering") return "";
     if (session.status === "wrong") {
       return `<div class="feedback-panel wrong" role="status"><span class="feedback-icon">${icon("x")}</span><div class="feedback-copy"><strong>Pas tout à fait !</strong><div class="answer-reveal">La bonne réponse : <span>${escapeHTML(personalize(correctAnswerText(exercise)))}</span></div><span class="auto-next-note">${icon("clock")}Suite dans 2 s</span></div></div>`;
     }
     const encouragement = ["Bravo !", "Excellent !", "Bien joué !"][Math.floor(Math.random() * 3)];
-    return `<div class="feedback-panel correct" role="status">${successCelebration(exercise)}<span class="feedback-icon">${icon("check")}</span><div class="feedback-copy"><strong>${encouragement}${session.lastXp > 0 ? ` +${session.lastXp} XP` : ""}</strong><p>Ta réponse est enregistrée.</p><span class="auto-next-note">${icon("clock")}Suite dans 2 s</span></div></div>`;
+    return `<div class="feedback-panel correct" role="status">${successCharacter()}${successCelebration(exercise)}<span class="feedback-icon">${icon("check")}</span><div class="feedback-copy"><strong>${encouragement}${session.lastXp > 0 ? ` +${session.lastXp} XP` : ""}</strong><p>Ta réponse est enregistrée.</p><span class="auto-next-note">${icon("clock")}Suite dans 2 s</span></div></div>`;
   }
 
   function correctAnswerText(exercise) {

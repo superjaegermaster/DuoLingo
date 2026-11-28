@@ -2504,6 +2504,107 @@ main:focus {
   background: #fff2f0;
 }
 
+.success-character {
+  position: absolute;
+  z-index: 7;
+  right: 13px;
+  bottom: calc(100% + 3px);
+  width: 96px;
+  height: 96px;
+  pointer-events: none;
+  transform-origin: 50% 100%;
+  animation: character-arrive 260ms cubic-bezier(.2, 1.6, .4, 1) both;
+  filter: drop-shadow(0 8px 7px rgba(43, 61, 88, .14));
+}
+
+.success-character svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.clement-character .strong-body,
+.clement-character .flex-arm,
+.clement-character .bicep,
+.eva-character .princess-body,
+.eva-character .princess-skirt {
+  transform-box: view-box;
+}
+
+.clement-character .strong-body {
+  transform-origin: 60px 105px;
+  animation: strong-body-bounce 1s ease-in-out both;
+}
+
+.clement-character .flex-arm-left {
+  transform-origin: 44px 54px;
+  animation: left-muscle-flex 1s ease-in-out both;
+}
+
+.clement-character .flex-arm-right {
+  transform-origin: 76px 54px;
+  animation: right-muscle-flex 1s ease-in-out both;
+}
+
+.clement-character .bicep {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bicep-pump 1s ease-in-out both;
+}
+
+.eva-character .princess-body {
+  transform-origin: 60px 103px;
+  animation: princess-twirl 1.15s cubic-bezier(.25, .75, .25, 1) both;
+}
+
+.eva-character .princess-skirt {
+  transform-origin: 60px 53px;
+  animation: skirt-flare 1.15s ease-in-out both;
+}
+
+@keyframes character-arrive {
+  from { opacity: 0; transform: translateY(12px) scale(.72); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes strong-body-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  25%, 65% { transform: translateY(-4px) scaleY(1.035); }
+  45%, 80% { transform: translateY(-1px) scaleY(1.015); }
+}
+
+@keyframes left-muscle-flex {
+  0%, 100% { transform: rotate(0deg); }
+  28%, 70% { transform: rotate(-16deg); }
+  46%, 84% { transform: rotate(-11deg); }
+}
+
+@keyframes right-muscle-flex {
+  0%, 100% { transform: rotate(0deg); }
+  28%, 70% { transform: rotate(16deg); }
+  46%, 84% { transform: rotate(11deg); }
+}
+
+@keyframes bicep-pump {
+  0%, 100% { transform: scale(1); }
+  30%, 72% { transform: scale(1.2); }
+  48%, 86% { transform: scale(1.1); }
+}
+
+@keyframes princess-twirl {
+  0% { transform: rotate(0deg) scale(.94); }
+  14% { transform: rotate(-10deg) scale(.98); }
+  52% { transform: rotate(345deg) scale(1.02); }
+  82% { transform: rotate(364deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes skirt-flare {
+  0%, 100% { transform: scaleX(1); }
+  35%, 60% { transform: scaleX(1.12); }
+}
+
 .feedback-icon {
   display: grid;
   width: 39px;
@@ -4125,6 +4226,13 @@ main:focus {
 
   .feedback-copy {
     min-width: calc(100% - 55px);
+  }
+
+  .success-character {
+    right: 7px;
+    bottom: calc(100% - 5px);
+    width: 78px;
+    height: 78px;
   }
 
   .modal-surface {
